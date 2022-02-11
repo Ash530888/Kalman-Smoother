@@ -74,23 +74,23 @@ def main():
                     cv2.rectangle(orig_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
                     (x1, y1) = KF.predict()
-                    cv2.rectangle(orig_frame, (int(x1 - w), int(y1 - h)),(int( x1 + w), int(y1 + h)), (255, 0, 0), 2)
+                    cv2.rectangle(orig_frame, (int(x1), int(y1)),(int( x1 + w), int(y1 + h)), (255, 0, 0), 2)
                     cv2.putText(orig_frame, "Predicted Position", (int(x1 + w), int(y1)), 0, 0.5, (255, 0, 0), 2)
 
                     (x, y) = KF.update(y)
-                    cv2.rectangle(orig_frame, (int(x - w), int(y - h)), (int(x + w), int(y + h)), (0, 0, 255), 2)
+                    cv2.rectangle(orig_frame, (int(x), int(y)), (int(x + w), int(y + h)), (0, 0, 255), 2)
 
                     cv2.putText(orig_frame, "Filtered Position", (int(x + 30), int(y +25)), 0, 0.5, (0, 0, 255), 2)
 
                     
                 else:
                     (x, y) = KF.predict()
-                    cv2.rectangle(orig_frame, (int(x - w), int(y - h)),(int( x + w), int(y + h)), (255, 0, 0), 2)
+                    cv2.rectangle(orig_frame, (int(x), int(y)),(int( x + w), int(y + h)), (255, 0, 0), 2)
 
                     cv2.putText(orig_frame, "Predicted Position", (int(x + 15), int(y)), 0, 0.5, (255, 0, 0), 2)
 
                     (x, y) = KF.updateMissing()
-                    cv2.rectangle(orig_frame, (int(x - 15), int(y - 15)), (int(x + 15), int(y + 15)), (0, 0, 255), 2)
+                    cv2.rectangle(orig_frame, (int(x), int(y)), (int(x + w), int(y + h)), (0, 0, 255), 2)
 
                     cv2.imshow('Detected Objects', orig_frame)
 
