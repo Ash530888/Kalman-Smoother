@@ -29,7 +29,8 @@ class KalmanFilter(object):
                             [0, 1, self.dt],
                             [0, 0, 1]])
 
-        self.A = np.block([[np.zeros((3,3)), self.A],[self.A, np.zeros((3,3))]])
+        # self.A = np.block([[np.zeros((3,3)), self.A],[self.A, np.zeros((3,3))]])
+        self.A = np.block([[self.A, np.zeros((3,3))],[np.zeros((3,3)), self.A]])
 
         # Define Measurement Mapping Matrix
         self.H = np.matrix([[1, 0, 0, 0, 0, 0],
@@ -40,7 +41,8 @@ class KalmanFilter(object):
                             [(self.dt**3)/2, self.dt**2, self.dt],
                             [(self.dt**2)/2, self.dt, 1]]) * std_acc**2
 
-        self.Q = np.block([[np.zeros((3,3)), self.Q],[self.Q, np.zeros((3,3))]])
+        # self.Q = np.block([[np.zeros((3,3)), self.Q],[self.Q, np.zeros((3,3))]])
+        self.Q = np.block([[self.Q, np.zeros((3,3))],[self.Q, np.zeros((3,3))]])
 
 
         #Initial Measurement Noise Covariance
@@ -63,26 +65,26 @@ class KalmanFilter(object):
         # P= A*P*A' + Q               Eq.(10)
         self.P = np.dot(np.dot(self.A, self.P), self.A.T) + self.Q
         
-        return self.x[0,0], self.x[3,0]
+        return self.x
 
     def update(self, z):
-
         # Refer to :Eq.(11), Eq.(12) and Eq.(13)  in https://machinelearningspace.com/object-tracking-simple-implementation-of-kalman-filter-in-python/?preview_id=1364&preview_nonce=52f6f1262e&preview=true&_thumbnail_id=1795
         # S = H*P*H'+R
         
         S = np.dot(self.H, np.dot(self.P, self.H.T)) + self.R
+        S = (S+np.transpose(S))/2
         
         # Calculate the Kalman Gain
         # K = P * H'* inv(H*P*H'+R)
         K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))  #Eq.(11)
 
-        self.x = np.round(self.x + np.dot(K, (z - np.dot(self.H, self.x))))   #Eq.(12)
+        self.x = self.x + np.dot(K, (z - np.dot(self.H, self.x)))   #Eq.(12)
 
         I = np.eye(self.H.shape[1])
 
         # Update error covariance matrix
         self.P = (I - (K * self.H)) * self.P   #Eq.(13)
-        return self.x[0,0], self.x[3,0]
+        return self.x
 
     def updateMissing(self):
 
@@ -94,11 +96,11 @@ class KalmanFilter(object):
         
         K = np.zeros(np.transpose(self.H).shape)  #Eq.(11)
 
-        self.x = np.round(self.x)   #Eq.(12)
+        # self.x = np.round(self.x)   #Eq.(12)
 
         I = np.eye(self.H.shape[1])
 
         # Update error covariance matrix
         self.P = (I - (K * self.H)) * self.P   #Eq.(13)
-        return self.x[0,0], self.x[3,0]
+        return self.x
         
