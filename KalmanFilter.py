@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class KalmanFilter(object):
-    def __init__(self, dt, std_acc, x_std_meas, y_std_meas):
+    def __init__(self, dt, std_acc, x_std_meas, y_std_meas, A, H, Q, R, m0, v0):
         """
         :param dt: sampling time (time for 1 cycle)
         :param std_acc: process noise magnitude
@@ -21,36 +21,24 @@ class KalmanFilter(object):
         # Define sampling time
         self.dt = dt
 
-        # Intial State
-        self.x = np.matrix([[0], [0], [0], [0], [0], [0]])
-
         # Define the State Transition Matrix A
-        self.A = np.matrix([[1, self.dt, (self.dt**2)/2],
-                            [0, 1, self.dt],
-                            [0, 0, 1]])
+        self.A = A
 
-        # self.A = np.block([[np.zeros((3,3)), self.A],[self.A, np.zeros((3,3))]])
-        self.A = np.block([[self.A, np.zeros((3,3))],[np.zeros((3,3)), self.A]])
+        # Intial State
+        self.x = m0
 
         # Define Measurement Mapping Matrix
-        self.H = np.matrix([[1, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 1, 0, 0]])
+        self.H = H
 
         #Initial Process Noise Covariance
-        self.Q = np.matrix([[(self.dt**4)/4, (self.dt**3)/2, (self.dt**2)/2],
-                            [(self.dt**3)/2, self.dt**2, self.dt],
-                            [(self.dt**2)/2, self.dt, 1]]) * std_acc**2
-
-        # self.Q = np.block([[np.zeros((3,3)), self.Q],[self.Q, np.zeros((3,3))]])
-        self.Q = np.block([[self.Q, np.zeros((3,3))],[self.Q, np.zeros((3,3))]])
+        self.Q = Q
 
 
         #Initial Measurement Noise Covariance
-        self.R = np.matrix([[x_std_meas**2,0],
-                           [0, y_std_meas**2]])
+        self.R = R
 
         #Initial Covariance Matrix
-        self.P = np.eye(self.A.shape[1])
+        self.P = v0
 
 
     def predict(self):
@@ -63,9 +51,9 @@ class KalmanFilter(object):
         
         # Calculate error covariance
         # P= A*P*A' + Q               Eq.(10)
-        self.P = np.dot(np.dot(self.A, self.P), self.A.T) + self.Q
+        self.P = np.dot(np.dot(self.A, self.P), np.transpose(self.A)) + self.Q
         
-        return self.x
+        return self.x, self.P
 
     def update(self, z):
         # Refer to :Eq.(11), Eq.(12) and Eq.(13)  in https://machinelearningspace.com/object-tracking-simple-implementation-of-kalman-filter-in-python/?preview_id=1364&preview_nonce=52f6f1262e&preview=true&_thumbnail_id=1795
@@ -76,7 +64,7 @@ class KalmanFilter(object):
         
         # Calculate the Kalman Gain
         # K = P * H'* inv(H*P*H'+R)
-        K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))  #Eq.(11)
+        K = np.dot(np.dot(self.P, np.transpose(self.H)), np.linalg.inv(S))  #Eq.(11)
 
         self.x = self.x + np.dot(K, (z - np.dot(self.H, self.x)))   #Eq.(12)
 
@@ -84,7 +72,7 @@ class KalmanFilter(object):
 
         # Update error covariance matrix
         self.P = (I - (K * self.H)) * self.P   #Eq.(13)
-        return self.x
+        return self.x, self.P
 
     def updateMissing(self):
 
@@ -102,5 +90,5 @@ class KalmanFilter(object):
 
         # Update error covariance matrix
         self.P = (I - (K * self.H)) * self.P   #Eq.(13)
-        return self.x
+        return self.x, self.P
         
